@@ -23,5 +23,5 @@ public class RequestBorrowResponse {
     LocalDateTime dueDate;
 
     UserResponse user;
-    Set<DeviceResponse> device;
+    DeviceResponse device;
 }

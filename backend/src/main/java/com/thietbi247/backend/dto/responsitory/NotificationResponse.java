@@ -18,4 +18,5 @@ public class NotificationResponse {
     LocalDateTime notificationDate;
     UserResponse user;
     ApprovalResponse approval;
+    boolean isRead;
 }

@@ -1,6 +1,7 @@
 package com.thietbi247.backend.service;
 
 import com.thietbi247.backend.constant.ErrorCode;
+import com.thietbi247.backend.dto.responsitory.NotificationCountResponse;
 import com.thietbi247.backend.dto.responsitory.NotificationResponse;
 import com.thietbi247.backend.entity.Notification;
 import com.thietbi247.backend.entity.User;
@@ -18,6 +19,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -35,7 +37,10 @@ public class NotificationService {
     @PreAuthorize("hasRole('ADMIN')")
     public List<NotificationResponse> getAll(){
         List<Notification>  notifications = repository.findAll();
-        return notifications.stream().map(mapper::toResponseNotificationResponse).collect(Collectors.toList());
+
+        return notifications.stream().map(mapper::toResponseNotificationResponse)
+                .sorted(Comparator.comparing(NotificationResponse::getNotificationDate).reversed())
+                .collect(Collectors.toList());
     }
 
     @PreAuthorize("hasRole('EMPLOYEE')")
@@ -59,6 +64,34 @@ public class NotificationService {
         if (notifications.isEmpty()) {
             new AppException(ErrorCode.NOTIFICATION_NOT_EXISTS);
         }
-        return notifications.stream().map(mapper::toResponseNotificationResponse).collect(Collectors.toList());
+
+        boolean hadUnRead = false;
+        for (Notification notification : notifications) {
+            if (!notification.isRead()) {
+                notification.setRead(true);
+                hadUnRead = true;
+            }
+        }
+
+        if (!hadUnRead) {
+            repository.saveAll(notifications);
+        }
+
+
+        return notifications.stream().map(mapper::toResponseNotificationResponse)
+                .sorted(Comparator.comparing(NotificationResponse::getNotificationDate).reversed())
+                .collect(Collectors.toList());
     }
+
+    @PreAuthorize("hasRole('EMPLOYEE')")
+    public NotificationCountResponse countUnreadNotifications() {
+        var info = SecurityContextHolder.getContext().getAuthentication();
+        User user = userRepository.findByUserName(info.getName())
+                .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_EXISTS));
+        int data = repository.countByUserAndIsReadFalse(user);
+        return NotificationCountResponse.builder()
+                .count(data)
+                .build();
+    }
+
 }

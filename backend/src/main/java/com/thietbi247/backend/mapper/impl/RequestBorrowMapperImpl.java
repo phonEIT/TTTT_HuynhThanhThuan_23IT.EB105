@@ -35,7 +35,6 @@ public class RequestBorrowMapperImpl implements RequestBorrowMapper {
     public RequestBorrow toRequestBorrow(RequestBorowRequest request) {
 
         return RequestBorrow.builder()
-                .id(request.getId())
                 .borrowReason(request.getBorrowReason())
                 .dueDate(request.getDueDate())
                 .build();
@@ -58,13 +57,7 @@ public class RequestBorrowMapperImpl implements RequestBorrowMapper {
                 .borrowReason(requestBorrow.getBorrowReason())
                 .dueDate(requestBorrow.getDueDate())
                 .user(userMapper.toUserSimpleResponse(requestBorrow.getUser()))
-                .device(
-                        requestBorrow.getDevices() != null
-                        ? requestBorrow.getDevices().stream()
-                        .map(deviceMapper::toDeviceResponse)
-                        .collect(Collectors.toSet())
-                        : Collections.emptySet()
-                )
+                .device(deviceMapper.toDeviceResponse(requestBorrow.getDevice()))
                 .build();
     }
 }

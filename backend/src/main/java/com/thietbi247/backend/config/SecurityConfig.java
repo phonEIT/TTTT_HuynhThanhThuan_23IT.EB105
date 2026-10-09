@@ -42,12 +42,14 @@ public class SecurityConfig {
             "/api/admin/employee",
             "/api/auth/token",
             "/api/auth/introspect",
-            "/api/auth/logout"
+            "/api/auth/logout",
+            "/api/chat_AI"
     };
 
     private final String[] GET_PUBLIC_ENDPOINTS = {
             "/api/admin/category",
             "/api/admin/device",
+            "/api/admin/device/**"
     };
 
     @Bean
@@ -84,19 +86,6 @@ public class SecurityConfig {
         return converter;
     }
 
-    // @Bean
-    // public UrlBasedCorsConfigurationSource corsConfigurationSource() {
-    // CorsConfiguration config = new CorsConfiguration();
-    // config.setAllowCredentials(true);
-    // config.setAllowedOrigins(List.of("http://localhost:5173"));
-    // config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-    // config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
-
-    // UrlBasedCorsConfigurationSource source = new
-    // UrlBasedCorsConfigurationSource();
-    // source.registerCorsConfiguration("/**", config);
-    // return source;
-    // }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {

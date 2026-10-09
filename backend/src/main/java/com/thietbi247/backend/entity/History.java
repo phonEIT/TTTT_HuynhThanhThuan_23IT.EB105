@@ -21,6 +21,8 @@ public class History {
     String id;
     LocalDateTime borrowDate;
     LocalDateTime returnDate;
+    LocalDateTime errorDate;
+
 
     @ManyToOne
     @JoinColumn(name = "user_id")
@@ -30,8 +32,19 @@ public class History {
     @JoinColumn(name = "device_id")
     Device device;
 
-
     @OneToOne
     @JoinColumn(name = "approval_id")
     Approval approval;
+
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "request_borrow_id")
+    RequestBorrow requestBorrow;
+
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "return_device_id")
+    ReturnDevice returnDevice;
+
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "error_report_id")
+    ErrorReport errorReport;
 }

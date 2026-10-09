@@ -4,13 +4,11 @@ import com.thietbi247.backend.constant.ApprovalStatus;
 import com.thietbi247.backend.constant.ApprovalType;
 import com.thietbi247.backend.constant.ErrorCode;
 import com.thietbi247.backend.dto.request.ErrorReportRequest;
-import com.thietbi247.backend.dto.request.RequestBorowRequest;
+import com.thietbi247.backend.dto.responsitory.AdminErrorReportResponse;
 import com.thietbi247.backend.dto.responsitory.ErrorReportResponse;
-import com.thietbi247.backend.dto.responsitory.RequestBorrowResponse;
 import com.thietbi247.backend.entity.*;
 import com.thietbi247.backend.exception.AppException;
 import com.thietbi247.backend.mapper.ErrorReportMapper;
-import com.thietbi247.backend.mapper.RequestBorrowMapper;
 import com.thietbi247.backend.repository.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -23,10 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -42,6 +37,7 @@ public class ErrorReportService {
     ApprovalRepository approvalRepository;
     HistoryRepository historyRepository;
     DeviceRepository deviceRepository;
+    RequestBorrowRepository  requestBorrowRepository;
 
     @PreAuthorize("hasRole('EMPLOYEE')")
     public ErrorReportResponse createErrorReport(ErrorReportRequest request) {
@@ -49,20 +45,31 @@ public class ErrorReportService {
         User user = userRepository.findByUserName(auth.getName())
                 .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_EXISTS));
 
-        if (request.getDevice_ids() == null || request.getDevice_ids().isEmpty()) {
-            throw new AppException(ErrorCode.ROLES_REQUIRED);
+        RequestBorrow requestBorrow = requestBorrowRepository.findById(request.getRequestBorrow_id()).orElseThrow(() ->
+                new AppException(ErrorCode.REQUEST_BORROW_NOT_EXISTS));
+        requestBorrow.setErrorDate(LocalDateTime.now());
+        requestBorrowRepository.save(requestBorrow);
+
+        Approval approvalRequest = approvalRepository.findByRequestBorrowId(requestBorrow.getId()).orElseThrow(() ->
+                new AppException(ErrorCode.APPROVAL_NOT_EXISTS));
+
+        if (approvalRequest.getStatus() != ApprovalStatus.APPROVED) {
+            throw new AppException(ErrorCode.APPROVAL_NOT_EXISTS);
         }
 
-        Set<Device> devices = new HashSet<>(deviceRepository.findAllById(request.getDevice_ids()));
-        if (devices.size() != request.getDevice_ids().size()) {
-            throw new AppException(ErrorCode.DEVICE_NOT_EXISTS);
-        }
+        History historyRequest = historyRepository.findByRequestBorrowId(request.getRequestBorrow_id());
+        historyRequest.setErrorDate(LocalDateTime.now());
+        historyRepository.save(historyRequest);
+
+        Device device = deviceRepository.findById(requestBorrow.getDevice().getId()).orElseThrow(() ->
+                new AppException(ErrorCode.DEVICE_NOT_EXISTS));
 
         ErrorReport errorReport = mapper.toErrorReport(request);
+        errorReport.setRequestBorrow(requestBorrow);
         errorReport.setUser(user);
+        errorReport.setErrorDate(LocalDateTime.now());
         errorReport = repository.save(errorReport);
 
-        Device firstDevice = devices.iterator().next(); // 🔹 Lấy thiết bị đầu tiên để gán vào Approval
 
         Approval approval = Approval.builder()
                 .status(ApprovalStatus.PENDING)
@@ -70,36 +77,21 @@ public class ErrorReportService {
                 .user(user)
                 .type(ApprovalType.ERROR_REPORT)
                 .errorReport(errorReport)
-                .device(firstDevice) // 🔹 Gán thiết bị vào Approval
+                .device(device)
                 .build();
         approval = approvalRepository.save(approval);
 
-        List<History> histories = new ArrayList<>();
-        for (Device device : devices) {
-            if (device.getErrorReports() == null)
-                device.setErrorReports(new HashSet<>());
-            device.getErrorReports().add(errorReport);
 
-            History history = History.builder()
-                    .borrowDate(LocalDateTime.now())
-                    .user(user)
-                    .device(device)
-                    .approval(approval)
-                    .build();
-            histories.add(history);
-        }
+        History history = History.builder()
+                .borrowDate(LocalDateTime.now())
+                .errorDate(LocalDateTime.now())
+                .user(user)
+                .device(device)
+                .errorReport(errorReport)
+                .approval(approval)
+                .build();
+        history = historyRepository.save(history);
 
-        historyRepository.saveAll(histories);
-
-        for (History h : histories) {
-            Device d = h.getDevice();
-            if (d.getHistoryList() == null) d.setHistoryList(new ArrayList<>());
-            d.getHistoryList().add(h);
-        }
-        deviceRepository.saveAll(devices);
-
-        errorReport.setDevices(devices);
-        repository.save(errorReport);
 
         return mapper.toErrorReportResponse(errorReport);
     }
@@ -108,25 +100,33 @@ public class ErrorReportService {
     @PreAuthorize("hasRole('ADMIN')")
     public List<ErrorReportResponse> getAllErrorReport() {
         List<ErrorReport>  errorReports = repository.findAll();
-        return errorReports.stream().map(mapper::toErrorReportResponse).collect(Collectors.toList());
+        return errorReports.stream()
+                .map(mapper::toErrorReportResponse)
+                .sorted(Comparator.comparing(ErrorReportResponse::getErrorDate).reversed())
+                .collect(Collectors.toList());
     }
 
     @Transactional
     @PreAuthorize("hasRole('ADMIN')")
     public void deleteAll() {
         List<Approval> approvals = approvalRepository.findAllByType(ApprovalType.ERROR_REPORT);
+
+        boolean hasNonPending = approvals.stream()
+                .anyMatch(a -> a.getStatus() != ApprovalStatus.PENDING);
+        if (hasNonPending) {
+            throw new AppException(ErrorCode.CANNOT_DELETE_APPROVED_OR_REJECTED);
+        }
+
+        List<ErrorReport> reports = repository.findAll();
+
         List<History> histories = historyRepository.findAllByApprovalIn(approvals);
         historyRepository.deleteAll(histories);
+
+        repository.saveAll(reports);
         approvalRepository.deleteAll(approvals);
-        repository.deleteAll();
+        repository.deleteAll(reports);
     }
 
-
-//    public void delete(String id){
-//        ErrorReport errorReport =  repository.findById(id).orElseThrow(()
-//                -> new AppException(ErrorCode.ERROR_REPORT_NOT_EXISTS));
-//        repository.delete(errorReport);
-//    }
 
     @PreAuthorize("hasRole('EMPLOYEE')")
     public List<ErrorReportResponse> getInfo(){
@@ -138,6 +138,18 @@ public class ErrorReportService {
         if (errorReports.isEmpty()) {
             throw new AppException(ErrorCode.ERROR_REPORT_NOT_EXISTS);
         }
-        return errorReports.stream().map(mapper::toErrorReportResponse).collect(Collectors.toList());
+        return errorReports.stream().map(mapper::toErrorReportResponse)
+                .sorted(Comparator.comparing(ErrorReportResponse::getErrorDate).reversed())
+                .collect(Collectors.toList());
     }
+
+
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<AdminErrorReportResponse> getErrorReportApproved(){
+        List<ErrorReport> report = repository.findAllApprovedErrorReports();
+        return report.stream().map(mapper::toAdminErrorReportResponse)
+                .sorted(Comparator.comparing(AdminErrorReportResponse::getErrorDate).reversed())
+                .collect(Collectors.toList());
+    }
+
 }

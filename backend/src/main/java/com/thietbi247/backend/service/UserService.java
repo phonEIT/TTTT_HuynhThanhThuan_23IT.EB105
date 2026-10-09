@@ -1,6 +1,7 @@
 package com.thietbi247.backend.service;
 
 import com.thietbi247.backend.constant.ErrorCode;
+import com.thietbi247.backend.constant.RoleType;
 import com.thietbi247.backend.dto.request.UserCreateRequest;
 import com.thietbi247.backend.dto.responsitory.UserResponse;
 import com.thietbi247.backend.entity.Role;
@@ -42,7 +43,7 @@ public class UserService {
     @PreAuthorize("hasRole('ADMIN')")
     public UserResponse createUser(UserCreateRequest request) {
         if (repository.existsByEmail(request.getEmail())) {
-            throw new AppException(ErrorCode.EMPLOYEE_EXISTS);
+            throw new AppException(ErrorCode.EMAIL_EXISTS);
         }
 
         if (!repository.findByUserName(request.getUserName()).isEmpty()) {
@@ -58,7 +59,7 @@ public class UserService {
             }
             user.setRoles(roles);
         } else {
-            throw new AppException(ErrorCode.ROLES_REQUIRED);
+            throw new AppException(ErrorCode.ROLE_NOT_EXISTS);
         }
 
         repository.save(user);
@@ -80,7 +81,7 @@ public class UserService {
         return mapper.toUserResponse(user);
     }
 
-    @PreAuthorize("hasRole('EMPLOYEE')")
+
     public UserResponse getMyInfo() {
         var info = SecurityContextHolder.getContext().getAuthentication();
         User user = repository.findByUserName(info.getName()).orElseThrow(() ->
@@ -103,7 +104,7 @@ public class UserService {
         return mapper.toUserResponse(user);
     }
 
-    //    @PreAuthorize("hasAuthority('DEVICE_VIEW')")
+
     @PreAuthorize("hasRole('ADMIN')")
     public List<UserResponse> getAllUser() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
@@ -114,6 +115,15 @@ public class UserService {
         List<User> users = repository.findAll();
 
         return users.stream().map(mapper::toUserResponse).collect(Collectors.toList());
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<UserResponse> getAllTechnician(){
+        Set<User> technicians = repository.findAllByRoles_Name(RoleType.TECHNICIAN.name());
+        if (technicians.isEmpty()) {
+            new AppException(ErrorCode.EMPLOYEE_NOT_EXISTS);
+        }
+        return technicians.stream().map(mapper::toUserResponse).collect(Collectors.toList());
     }
 }
 

@@ -13,5 +13,5 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ErrorReportRequest {
     String description;
-    List<String> device_ids;
+    String requestBorrow_id;
 }

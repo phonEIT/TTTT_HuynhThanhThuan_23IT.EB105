@@ -3,6 +3,7 @@ package com.thietbi247.backend.controller;
 import com.thietbi247.backend.constant.SuccessCode;
 import com.thietbi247.backend.dto.request.ErrorReportRequest;
 import com.thietbi247.backend.dto.request.RequestBorowRequest;
+import com.thietbi247.backend.dto.responsitory.AdminErrorReportResponse;
 import com.thietbi247.backend.dto.responsitory.ApiResponse;
 import com.thietbi247.backend.dto.responsitory.ErrorReportResponse;
 import com.thietbi247.backend.dto.responsitory.RequestBorrowResponse;
@@ -57,4 +58,9 @@ public class ErrorReportController {
         return ApiResponseUtil.success(data, SuccessCode.GET_ERROR_REPORT);
     }
 
+    @GetMapping("/hanlde")
+    public ResponseEntity<List<AdminErrorReportResponse>> getAllErrorReportAdmin() {
+        List<AdminErrorReportResponse> data = service.getErrorReportApproved();
+        return ApiResponseUtil.success(data, SuccessCode.GET_ERROR_REPORT);
+    }
 }

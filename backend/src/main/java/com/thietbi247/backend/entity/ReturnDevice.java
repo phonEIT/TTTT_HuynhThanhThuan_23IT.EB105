@@ -27,10 +27,19 @@ public class ReturnDevice {
     @JoinColumn(name = "user_id")
     User user;
 
-    @OneToMany(mappedBy = "returnDevice", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    List<Device> deviceList;
+    @ManyToOne
+    @JoinColumn(name = "device_id")
+     Device device;
 
     @OneToOne(mappedBy = "returnDevice", cascade = CascadeType.ALL)
     Approval approval;
+
+    @OneToOne
+    @JoinColumn(name = "request_borrow_id")
+    RequestBorrow requestBorrow;
+
+    @OneToOne(mappedBy = "returnDevice")
+    History history;
+
 }
 

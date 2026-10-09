@@ -17,7 +17,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -63,8 +62,18 @@ public class DeviceService {
         repository.save(device);
     }
 
+    public List<DeviceResponse> getDeviceByName(String name){
+        List<Device> devices = repository.findByProductNameContainingIgnoreCase(name);
+        if (devices.isEmpty()){
+            throw new AppException(ErrorCode.DEVICE_NOT_EXISTS);
+        }
+        return devices.stream().map(mapper::toDeviceResponse).collect(Collectors.toList());
+    }
+
     @PreAuthorize("hasRole('ADMIN')")
     public void deleteAllDevice() {
        repository.deleteAll();
     }
+
+
 }

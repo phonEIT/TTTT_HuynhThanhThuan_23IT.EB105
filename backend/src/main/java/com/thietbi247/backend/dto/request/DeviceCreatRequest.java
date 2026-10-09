@@ -19,6 +19,5 @@ public class DeviceCreatRequest {
     String status;
     String image;
     String description;
-
     String categoryId;
 }

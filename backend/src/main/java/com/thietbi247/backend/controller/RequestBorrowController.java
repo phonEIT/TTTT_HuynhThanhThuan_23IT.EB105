@@ -58,4 +58,10 @@ public class RequestBorrowController {
         return ApiResponseUtil.success(data, SuccessCode.GET_REQUEST_BORROW);
     }
 
+    @GetMapping("/not-returned")
+    public  ResponseEntity<List<RequestBorrowResponse>> getBorrowedDevicesNotReturned() {
+        List<RequestBorrowResponse> data = service.getApprovedRequestBorrows();
+        return ApiResponseUtil.success(data, SuccessCode.BORROWED_DEVICE_LISTED_BY_USER);
+    }
+
 }

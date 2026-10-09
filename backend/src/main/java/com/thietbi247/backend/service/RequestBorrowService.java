@@ -4,6 +4,7 @@ import com.thietbi247.backend.constant.ApprovalStatus;
 import com.thietbi247.backend.constant.ApprovalType;
 import com.thietbi247.backend.constant.ErrorCode;
 import com.thietbi247.backend.dto.request.RequestBorowRequest;
+import com.thietbi247.backend.dto.responsitory.ApprovalResponse;
 import com.thietbi247.backend.dto.responsitory.RequestBorrowResponse;
 import com.thietbi247.backend.entity.*;
 import com.thietbi247.backend.exception.AppException;
@@ -21,10 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -43,73 +41,64 @@ public class RequestBorrowService {
     DeviceRepository deviceRepository;
 
     @PreAuthorize("hasRole('EMPLOYEE')")
+    @Transactional
     public RequestBorrowResponse createRequestBorrow(RequestBorowRequest request) {
+        // Lấy user hiện tại
         var info = SecurityContextHolder.getContext().getAuthentication();
         User user = userRepository.findByUserName(info.getName())
                 .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_EXISTS));
 
-        if (request.getDevice_ids() == null || request.getDevice_ids().isEmpty()) {
-            throw new AppException(ErrorCode.ROLES_REQUIRED);
-        }
-
-        Set<Device> devices = new HashSet<>(deviceRepository.findAllById(request.getDevice_ids()));
-        if (devices.size() != request.getDevice_ids().size()) {
+        // Kiểm tra device_id
+        if (request.getDevice_id() == null || request.getDevice_id().isEmpty()) {
             throw new AppException(ErrorCode.DEVICE_NOT_EXISTS);
         }
 
-        RequestBorrow borrow = mapper.toRequestBorrow(request);
-        borrow.setUser(user);
-        borrow.setBorrowDate(LocalDateTime.now());
+        // Lấy device
+        Device device = deviceRepository.findById(request.getDevice_id())
+                .orElseThrow(() -> new AppException(ErrorCode.DEVICE_NOT_EXISTS));
+
+        // Tạo RequestBorrow
+        RequestBorrow borrow = RequestBorrow.builder()
+                .user(user)
+                .borrowDate(LocalDateTime.now())
+                .borrowReason(request.getBorrowReason())
+                .dueDate(request.getDueDate())
+                .device(device) // mỗi request chỉ 1 device
+                .build();
+
         borrow = repository.save(borrow);
 
-        Device firstDevice = devices.iterator().next(); // 🔹 lấy thiết bị đầu tiên để gán vào Approval
-
+        // Tạo Approval
         Approval approval = Approval.builder()
                 .status(ApprovalStatus.PENDING)
                 .requestDate(LocalDateTime.now())
                 .user(user)
                 .type(ApprovalType.REQUEST_BORROW)
                 .requestBorrow(borrow)
-                .device(firstDevice) // 🔹 gán thiết bị vào Approval
+                .device(device)
                 .build();
         approval = approvalRepository.save(approval);
 
-        List<History> histories = new ArrayList<>();
-        for (Device device : devices) {
-            if (device.getRequestBorrows() == null) {
-                device.setRequestBorrows(new HashSet<>());
-            }
-            device.getRequestBorrows().add(borrow);
-
-            History history = History.builder()
-                    .borrowDate(LocalDateTime.now())
-                    .user(user)
-                    .device(device)
-                    .approval(approval)
-                    .build();
-            histories.add(history);
-        }
-        historyRepository.saveAll(histories);
-
-        for (History history : histories) {
-            Device device = history.getDevice();
-            if (device.getHistoryList() == null)
-                device.setHistoryList(new ArrayList<>());
-            device.getHistoryList().add(history);
-        }
-
-        deviceRepository.saveAll(devices);
-        borrow.setDevices(devices);
-        repository.save(borrow);
+        // Tạo History
+        History history = History.builder()
+                .borrowDate(LocalDateTime.now())
+                .requestBorrow(borrow)
+                .user(user)
+                .device(device)
+                .approval(approval)
+                .build();
+        historyRepository.save(history);
 
         return mapper.toRequestBorrowResponse(borrow);
     }
 
-
     @PreAuthorize("hasRole('ADMIN')")
     public List<RequestBorrowResponse> getAllRequestBorrow() {
         List<RequestBorrow> requestBorrows = repository.findAll();
-        return requestBorrows.stream().map(mapper::toRequestBorrowResponse).collect(Collectors.toList());
+        return requestBorrows.stream()
+                .map(mapper::toRequestBorrowResponse)
+                .sorted(Comparator.comparing(RequestBorrowResponse::getBorrowDate).reversed())
+                .collect(Collectors.toList());
     }
 
     @PreAuthorize("hasRole('EMPLOYEE')")
@@ -120,14 +109,37 @@ public class RequestBorrowService {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    public void deleteAll(){
-        List<Approval> approvals = approvalRepository.findAll();
-        for (Approval approval : approvals) {
-            approval.setRequestBorrow(null);
+    @Transactional
+    public void deleteAll() {
+        // 1. Lấy tất cả Approval loại REQUEST_BORROW
+        List<Approval> approvals = approvalRepository.findAllByType(ApprovalType.REQUEST_BORROW)
+                .stream()
+                .filter(approval -> approval.getStatus() == ApprovalStatus.PENDING)
+                .collect(Collectors.toList());
+
+        if (approvals.isEmpty()) {
+            throw new AppException(ErrorCode.CANNOT_DELETE_APPROVED_OR_REJECTED);
         }
-        approvalRepository.saveAll(approvals);
+
+        List<History> histories = historyRepository.findAllByApprovalIn(approvals);
+        historyRepository.deleteAll(histories);
+
+        // 4. Clear quan hệ devices trong RequestBorrow
+        List<RequestBorrow> borrows = repository.findAllByApprovalIn(approvals);
+        for (RequestBorrow borrow : borrows) {
+            borrow.setDevice(null); // xóa liên kết với device
+            repository.save(borrow);
+        }
+
+        repository.saveAll(borrows);
+
+        // 5. Xóa approvals
+        approvalRepository.deleteAll(approvals);
+
+        // 6. Xóa RequestBorrow
         repository.deleteAll();
     }
+
 
     @PreAuthorize("hasRole('EMPLOYEE')")
     public List<RequestBorrowResponse> getInfo(){
@@ -140,6 +152,29 @@ public class RequestBorrowService {
             throw new AppException(ErrorCode.REQUEST_BORROW_NOT_EXISTS);
         }
 
-        return requestBorrows.stream().map(mapper::toRequestBorrowResponse).collect(Collectors.toList());
+        return requestBorrows.stream()
+                .map(mapper::toRequestBorrowResponse)
+                .sorted(Comparator.comparing(RequestBorrowResponse::getBorrowDate).reversed())
+                .collect(Collectors.toList());
+    }
+
+
+    @PreAuthorize("hasRole('EMPLOYEE')")
+    public List<RequestBorrowResponse> getApprovedRequestBorrows(){
+        var info = SecurityContextHolder.getContext().getAuthentication();
+        User user = userRepository.findByUserName(info.getName()).orElseThrow(() ->
+                new AppException(ErrorCode.EMPLOYEE_NOT_EXISTS)
+        );
+
+        List<RequestBorrow> borrows = repository.findBorrowedDevicesNotReturnedByUser(user.getUserName());
+
+        if (borrows.isEmpty()) {
+            throw new AppException(ErrorCode.REQUEST_BORROW_NOT_EXISTS);
+        }
+
+        return borrows.stream()
+                .map(mapper::toRequestBorrowResponse)
+                .collect(Collectors.toList());
+
     }
 }

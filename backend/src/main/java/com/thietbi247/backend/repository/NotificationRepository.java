@@ -9,6 +9,9 @@ import java.util.Optional;
 
 public interface NotificationRepository extends JpaRepository<Notification, String> {
     Optional<Notification> findByUser_Id(String id);
-
+    boolean existsByApprovalAndContentContaining(Approval approval, String keyword);
+    boolean existsByApproval(Approval approval);
     List<Notification> findAllByUser(User user);
+
+    int countByUserAndIsReadFalse(User user);
 }

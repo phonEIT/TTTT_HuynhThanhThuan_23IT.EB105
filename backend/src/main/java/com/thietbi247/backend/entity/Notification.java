@@ -29,5 +29,7 @@ public class Notification {
     @JoinColumn(name = "approval_id")
     Approval approval;
 
+    @Column(nullable = false)
+    boolean isRead = false;
 
 }

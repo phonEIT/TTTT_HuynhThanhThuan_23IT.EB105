@@ -9,7 +9,6 @@ import com.thietbi247.backend.entity.Device;
 
 public interface DeviceMapper {
     Device toDevice(DeviceCreatRequest request);
-
     void updateDevice(Device device, DeviceUpdateRequest request);
     DeviceResponse toDeviceResponse(Device device);
 

@@ -51,13 +51,7 @@ public class ReturnDeviceMapperImpl implements ReturnDeviceMapper {
         return ReturnDeviceResponse.builder()
                 .id(returnDevice.getId())
                 .user(userMapper.toUserSimpleResponse(returnDevice.getUser()))
-                .devices(
-                        returnDevice.getDeviceList() != null
-                        ? returnDevice.getDeviceList().stream()
-                                .map(deviceMapper::toDeviceResponse)
-                                .toList()
-                                : Collections.emptyList()
-                )
+                .device(deviceMapper.toDeviceResponse(returnDevice.getDevice()))
                 .returnDate(returnDevice.getReturnDate())
                 .build();
     }

@@ -25,14 +25,14 @@ public class ChatAIService {
         chatClient = builder.build();
     }
 
-    @PreAuthorize("hasRole('EMPLOYEE')")
+
     public ChatAIReponse chatImageOptional(MultipartFile file, String message) {
         // Tin nhắn hệ thống
         String systemPrompt = """
-        Mày đang nói chuyện với tao – AI của thietbi247 😎.
-        Tao trả lời kiểu mày tao cho gần gũi, thỉnh thoảng chọc ghẹo cho vui.
-        Trả lời chính xác nhưng thêm chút lầy lội để bớt nhàm chán.
-        Không bịa thông tin kỹ thuật và trả lời ngắn gọn.
+        Bạn đang trò chuyện với AI của thietbi247.
+        Tôi luôn trả lời với thái độ lịch sự, chuyên nghiệp và dễ hiểu.
+        Cung cấp thông tin chính xác, ngắn gọn, hữu ích cho khách hàng.
+        Luôn ưu tiên giải quyết vấn đề và mang lại trải nghiệm tốt nhất.
     """;
 
         var promptBuilder = chatClient.prompt()

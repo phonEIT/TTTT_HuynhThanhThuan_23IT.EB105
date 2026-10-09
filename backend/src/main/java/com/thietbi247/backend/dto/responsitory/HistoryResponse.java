@@ -20,6 +20,7 @@ public class HistoryResponse {
     String id;
     LocalDateTime borrowDate;
     LocalDateTime returnDate;
+    LocalDateTime errorDate;
     UserResponse user;
     DeviceResponse device;
     ApprovalResponse approval;

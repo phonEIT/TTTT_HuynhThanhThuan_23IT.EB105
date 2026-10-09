@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -49,17 +50,25 @@ public class ReturnDeviceService {
         User user = userRepository.findByUserName(info.getName())
                 .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_EXISTS));
 
-        List<Device> devices = deviceRepository.findAllById(request.getDeviceId());
-        if (devices.isEmpty()) {
-            throw new AppException(ErrorCode.DEVICE_NOT_EXISTS);
+        Approval approvalBorrow = approvalRepository.findByRequestBorrowId(request.getRequestBorrow_id()).orElseThrow(() ->
+                new AppException(ErrorCode.APPROVAL_NOT_EXISTS));
+
+        if (!approvalBorrow.getStatus().equals(ApprovalStatus.APPROVED)) {
+            throw new AppException(ErrorCode.REQUEST_BORROW_NOT_APPROVED);
         }
+
+        RequestBorrow borrow = requestBorrowRepository.findById(request.getRequestBorrow_id()).orElseThrow(() ->
+                new AppException(ErrorCode.REQUEST_BORROW_NOT_EXISTS));
+
+        Device device = deviceRepository.findById(borrow.getDevice().getId()).orElseThrow(() ->
+                new  AppException(ErrorCode.DEVICE_NOT_EXISTS));
 
         ReturnDevice returnDevice = mapper.toReturnDevice(request);
         returnDevice.setUser(user);
+        returnDevice.setDevice(device);
+        returnDevice.setRequestBorrow(borrow);
         returnDevice.setReturnDate(LocalDateTime.now());
         returnDevice = returnDeviceRepository.save(returnDevice);
-
-        Device firstDevice = devices.get(0); // 🔹 lấy thiết bị đầu tiên để gán vào Approval
 
         Approval approval = Approval.builder()
                 .status(ApprovalStatus.PENDING)
@@ -67,36 +76,33 @@ public class ReturnDeviceService {
                 .returnDevice(returnDevice)
                 .type(ApprovalType.RETURN_DEVICE)
                 .user(user)
-                .device(firstDevice) // 🔹 gán device vào approval
+                .device(device)
                 .build();
         approvalRepository.save(approval);
 
+        History historyBorrow = historyRepository.findByRequestBorrowId(request.getRequestBorrow_id());
+        historyBorrow.setReturnDate(LocalDateTime.now());
+        historyRepository.save(historyBorrow);
+
         History history = History.builder()
-                .borrowDate(LocalDateTime.now())
+                .returnDate(LocalDateTime.now())
+                .borrowDate(borrow.getBorrowDate())
                 .user(user)
+                .returnDevice(returnDevice)
                 .approval(approval)
+                .device(device)
                 .build();
         historyRepository.save(history);
-
-        for (Device device : devices) {
-            device.setReturnDevice(returnDevice);
-            history.setDevice(device);
-
-            if (device.getHistoryList() == null) {
-                device.setHistoryList(new ArrayList<>());
-            }
-            device.getHistoryList().add(history);
-        }
-
-        returnDevice.setDeviceList(devices);
-        returnDeviceRepository.save(returnDevice);
 
         return mapper.toReturnDeviceResponse(returnDevice);
     }
 
     public List<ReturnDeviceResponse> getAllReturnDevice() {
         List<ReturnDevice> returnDevices = returnDeviceRepository.findAll();
-        return returnDevices.stream().map(mapper::toReturnDeviceResponse).collect(Collectors.toList());
+        return returnDevices.stream()
+                .map(mapper::toReturnDeviceResponse)
+                .sorted(Comparator.comparing(ReturnDeviceResponse::getReturnDate).reversed())
+                .collect(Collectors.toList());
     }
 //
 //    public void deleteRequestBorrow(String requestBorrowId) {
@@ -113,11 +119,11 @@ public class ReturnDeviceService {
         historyRepository.deleteAll(histories);
         approvalRepository.deleteAll(approvals);
 
-        List<Device> devices = deviceRepository.findAll();
-        for (Device device : devices) {
-            device.setReturnDevice(null);
-        }
-        deviceRepository.saveAll(devices);
+//        List<Device> devices = deviceRepository.findAll();
+//        for (Device device : devices) {
+//            device.setReturnDevice(null);
+//        }
+//        deviceRepository.saveAll(devices);
 
         returnDeviceRepository.deleteAll();
     }
@@ -134,6 +140,11 @@ public class ReturnDeviceService {
             throw new AppException(ErrorCode.RETURN_DEVICE_NOT_EXISTS);
         }
 
-        return returnDevices.stream().map(mapper::toReturnDeviceResponse).collect(Collectors.toList());
+        return returnDevices.stream()
+                .map(mapper::toReturnDeviceResponse)
+                .sorted(Comparator.comparing(ReturnDeviceResponse::getReturnDate).reversed())
+                .collect(Collectors.toList());
     }
+
+
 }

@@ -20,6 +20,5 @@ public class DeviceResponse {
     String description;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm:ss dd/MM/yyyy")
-    LocalDateTime datePurchase;
     String categoryId;
 }

@@ -17,4 +17,5 @@ public class UserResponse {
     String address;
     Integer room;
     Set<RoleResponse> roles;
+
 }

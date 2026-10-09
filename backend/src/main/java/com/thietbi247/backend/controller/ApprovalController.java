@@ -1,5 +1,6 @@
 package com.thietbi247.backend.controller;
 
+import com.thietbi247.backend.constant.ApprovalType;
 import com.thietbi247.backend.constant.SuccessCode;
 import com.thietbi247.backend.dto.request.ApprovalUpdateRequest;
 import com.thietbi247.backend.dto.responsitory.ApiResponse;
@@ -25,8 +26,15 @@ public class ApprovalController {
     @GetMapping
     public ResponseEntity<List<ApprovalResponse>> getAll(){
         List<ApprovalResponse> data = service.getAll();
-        return ApiResponseUtil.success(data, SuccessCode.RETURN_DEVICE_CREATED);
+        return ApiResponseUtil.success(data, SuccessCode.APPROVAL_LISTED);
     }
+
+    @GetMapping("/{type}")
+    public ResponseEntity<List<ApprovalResponse>> getAllError(@PathVariable ApprovalType type){
+        List<ApprovalResponse> data = service.getApprovalType(type);
+        return ApiResponseUtil.success(data, SuccessCode.APPROVAL_LISTED);
+    }
+
 
 //    @DeleteMapping
 //    public  ResponseEntity<ApiResponse<Void>> deleteAll(){

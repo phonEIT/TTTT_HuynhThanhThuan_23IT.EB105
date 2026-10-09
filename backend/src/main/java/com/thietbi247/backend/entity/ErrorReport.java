@@ -23,14 +23,9 @@ public class ErrorReport {
     String description;
     LocalDateTime errorDate;
 
-
-    @ManyToMany
-    @JoinTable(
-            name = "error_report_device",
-            joinColumns = @JoinColumn(name = "error_report_id"),
-            inverseJoinColumns = @JoinColumn(name = "device_id")
-    )
-    Set<Device> devices;
+    @OneToOne
+    @JoinColumn(name = "request_borrow_id")
+    RequestBorrow requestBorrow;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
@@ -38,4 +33,8 @@ public class ErrorReport {
 
     @OneToOne(mappedBy = "errorReport", cascade = CascadeType.ALL)
     Approval approval;
+
+    @OneToOne(mappedBy = "errorReport")
+    History history;
+
 }

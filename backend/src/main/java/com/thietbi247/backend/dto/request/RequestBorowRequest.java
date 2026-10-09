@@ -15,12 +15,11 @@ import java.util.List;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class RequestBorowRequest {
-    String id;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm:ss dd/MM/yyyy")
     String borrowReason;
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm:ss dd/MM/yyyy")
-    @DueDateConstraint(max = 14,message = "INVALID_DUE_DATE")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm")
+    @DueDateConstraint(max = 14, message = "INVALID_DUE_DATE")
     LocalDateTime dueDate;
-    List<String> device_ids;
+    String device_id;
 }

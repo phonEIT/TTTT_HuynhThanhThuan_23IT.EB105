@@ -11,8 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ReturnDeviceRepository extends JpaRepository<ReturnDevice, String> {
-    @Query("SELECT rd FROM ReturnDevice rd LEFT JOIN FETCH rd.deviceList")
-    List<ReturnDevice> findAllWithDevices();
+
 
     Optional<ReturnDevice> findByUser_Id(String name);
 

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.springframework.ai.retry.RetryUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,23 +33,20 @@ public class Device {
     @JsonIgnore
     List<History>  historyList;
 
-    @ManyToOne
-    @JoinColumn(name = "return_device_id")
-    ReturnDevice returnDevice;
+    @OneToMany(mappedBy = "device", cascade = CascadeType.ALL, orphanRemoval = true)
+    List<ReturnDevice> returnDevices;
 
-    @ManyToMany(mappedBy = "devices")
-    @JsonIgnore
-    Set<RequestBorrow> requestBorrows;
-
-
-    @ManyToMany(mappedBy = "devices")
-    @JsonIgnore
-    Set<ErrorReport> errorReports;
+    @OneToMany(mappedBy = "device", cascade = CascadeType.ALL, orphanRemoval = true)
+    List<RequestBorrow> requestBorrows;
 
     @ManyToOne
     @JoinColumn(name = "category_id")
     Category category;
 
-    @OneToOne(mappedBy = "device", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Approval approval;
+    @OneToMany(mappedBy = "device", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<Approval> approvals;
+
+
+
 }

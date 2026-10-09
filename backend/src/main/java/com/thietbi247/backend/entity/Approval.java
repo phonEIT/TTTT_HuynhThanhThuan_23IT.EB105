@@ -10,6 +10,7 @@ import lombok.experimental.FieldDefaults;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
+
 @Entity
 @Getter
 @Setter
@@ -33,18 +34,18 @@ public class Approval {
     @JoinColumn(name = "user_id")
     User user;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "error_report_id")
     ErrorReport errorReport;
 
-    @OneToOne
-    @JoinColumn(name = "return_device_id")
-    @JsonIgnore // 🔒 Tránh vòng lặp với ReturnDevice
-    ReturnDevice returnDevice;
-
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "request_borrow_id")
     RequestBorrow requestBorrow;
+
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "return_device_id")
+    ReturnDevice returnDevice;
+
 
     @OneToMany(mappedBy = "approval", cascade = CascadeType.ALL)
     @JsonIgnore
@@ -53,7 +54,8 @@ public class Approval {
     @Enumerated(EnumType.STRING)
     ApprovalType type;
 
-    @OneToOne
-    @JoinColumn(name = "device_id", referencedColumnName = "id")
-    Device device;
+    @ManyToOne
+    @JoinColumn(name = "device_id")
+    private Device device;
+
 }

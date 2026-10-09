@@ -1,7 +1,5 @@
 package com.thietbi247.backend.dto.responsitory;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.thietbi247.backend.entity.User;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -19,5 +17,5 @@ public class ReturnDeviceResponse {
     String id;
     LocalDateTime returnDate;
     UserResponse user;
-    List<DeviceResponse> devices;
+    DeviceResponse device;
 }

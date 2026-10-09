@@ -3,7 +3,6 @@ package com.thietbi247.backend.config;
 import com.thietbi247.backend.constant.RoleType;
 import com.thietbi247.backend.entity.Role;
 import com.thietbi247.backend.entity.User;
-import com.thietbi247.backend.enums.Roles;
 import com.thietbi247.backend.repository.RoleRepository;
 import com.thietbi247.backend.repository.UserRepository;
 import lombok.AccessLevel;
@@ -16,6 +15,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Configuration
@@ -32,8 +32,10 @@ public class ApplicationInitConfig {
             // Tìm hoặc tạo role ADMIN chỉ 1 lần duy nhất
             boolean exitstAdmin = roleRepository.existsByName(RoleType.ADMIN.name());
             if (!exitstAdmin) {
-                Role admin = new Role(RoleType.ADMIN.name() + RoleType.EMPLOYEE.name(), "Quyền quản trị hệ thống", new HashSet<>());
+                Role admin = new Role(RoleType.ADMIN.name(), "Quyền quản trị hệ thống", new HashSet<>());
                 Role employee = new Role(RoleType.EMPLOYEE.name(), "Quyền nhân viên hệ thống", new HashSet<>());
+                roleRepository.saveAll(List.of(admin, employee));
+
                 if (userRepository.findByUserName("admin").isEmpty()) {
                     Set<Role> roles = new HashSet<>();
                     roles.add(admin);

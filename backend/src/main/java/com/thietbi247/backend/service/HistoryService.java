@@ -17,7 +17,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.GetMapping;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -32,23 +34,94 @@ public class HistoryService {
     UserRepository userRepository;
     HistoryRepository historyRepository;
 
+    private User getCurrentUser() {
+        var info = SecurityContextHolder.getContext().getAuthentication();
+        return userRepository.findByUserName(info.getName())
+                .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_EXISTS));
+    }
+
     @PreAuthorize("hasRole('ADMIN')")
     public List<HistoryResponse> getAll(){
         List<History> histories = historyRepository.findAll();
-        return histories.stream().map(mapper::toHistoryResponse).collect(Collectors.toList());
+        return histories.stream()
+                .map(mapper::toHistoryResponse)
+                .sorted(Comparator.comparing(HistoryResponse::getBorrowDate).reversed())
+                .collect(Collectors.toList());
     }
 
     @PreAuthorize("hasRole('EMPLOYEE')")
     public List<HistoryResponse> getInfo(){
-        var info = SecurityContextHolder.getContext().getAuthentication();
-        User user = userRepository.findByUserName(info.getName()).orElseThrow(() ->
-                new AppException(ErrorCode.EMPLOYEE_NOT_EXISTS));
-
+        User  user = getCurrentUser();
         List<History> histories = historyRepository.findAllByUser(user);
         if (histories.isEmpty()) {
             throw new AppException(ErrorCode.HISTORY_NOT_EXISTS);
         }
 
-        return histories.stream().map(mapper::toHistoryResponse).collect(Collectors.toList());
+        return histories.stream()
+                .map(mapper::toHistoryResponse)
+                .sorted(Comparator.comparing(HistoryResponse::getBorrowDate).reversed())
+                .collect(Collectors.toList());
+    }
+
+    @PreAuthorize("hasRole('EMPLOYEE')")
+    public List<HistoryResponse> myReturnHistory(){
+        User  user = getCurrentUser();
+        List<History> histories = historyRepository.findAllByUserAndReturnDeviceIdIsNotNull(user);
+        return histories.stream()
+                .map(mapper::toHistoryResponse)
+                .sorted(Comparator.comparing(HistoryResponse::getBorrowDate).reversed())
+                .collect(Collectors.toList());
+
+    }
+
+    @PreAuthorize("hasRole('EMPLOYEE')")
+    public List<HistoryResponse> myRequestBorrowHistory(){
+        User  user = getCurrentUser();
+        List<History> histories = historyRepository.findAllByUserAndRequestBorrowIdIsNotNull(user);
+        return histories.stream()
+                .map(mapper::toHistoryResponse)
+                .sorted(Comparator.comparing(HistoryResponse::getBorrowDate).reversed())
+                .collect(Collectors.toList());
+
+    }
+
+    public List<HistoryResponse> myErrorReportHistory(){
+        User  user = getCurrentUser();
+        List<History> histories = historyRepository.findAllByUserAndErrorReportIdIsNotNull(user);
+        return histories.stream()
+                .map(mapper::toHistoryResponse)
+                .sorted(Comparator.comparing(HistoryResponse::getBorrowDate).reversed())
+                .collect(Collectors.toList());
+
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<HistoryResponse> getAllRequestBorrowHistory(){
+        List<History> histories = historyRepository.findAllByRequestBorrowIdIsNotNull();
+        return histories.stream()
+                .map(mapper::toHistoryResponse)
+                .sorted(Comparator.comparing(HistoryResponse::getBorrowDate).reversed())
+                .collect(Collectors.toList());
+
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<HistoryResponse> getAllReturnHistory(){
+        List<History> histories = historyRepository.findAllByReturnDeviceIdIsNotNull();
+        return histories.stream()
+                .map(mapper::toHistoryResponse)
+                .sorted(Comparator.comparing(HistoryResponse::getBorrowDate).reversed())
+                .collect(Collectors.toList());
+
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<HistoryResponse> getAllErrorHistory(){
+        List<History> histories = historyRepository.findAllByErrorReportIdIsNotNull();
+        return histories.stream()
+                .map(mapper::toHistoryResponse)
+                .sorted(Comparator.comparing(HistoryResponse::getBorrowDate).reversed())
+                .collect(Collectors.toList());
+
     }
 }

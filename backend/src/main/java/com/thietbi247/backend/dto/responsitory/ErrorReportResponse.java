@@ -20,9 +20,12 @@ import java.util.Set;
 public class ErrorReportResponse {
     String id;
     String description;
-
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm:ss dd/MM/yyyy")
     LocalDateTime errorDate;
-    Set<DeviceResponse> devices;
-    UserResponse user;
+    String device;
+    String image;
+    String status;
+    String technician;
+    String taskStatus;
+    String technicianNote;
 }

@@ -29,6 +29,7 @@ public class HistoryMapperImpl implements HistoryMapper {
                 .id(history.getId())
                 .borrowDate(history.getBorrowDate())
                 .returnDate(history.getReturnDate())
+                .errorDate(history.getErrorDate())
                 .user(userMapper.toUserSimpleResponse(history.getUser()))
                 .device(deviceMapper.toDeviceResponse(history.getDevice()))
                 .approval(approvalMapper.toApprovalSimpleResponse(history.getApproval()))

@@ -66,6 +66,7 @@ public class NotificationMapperImpl implements NotificationMapper {
         return NotificationResponse.builder()
                 .id(notification.getId())
                 .user(userMapper.toUserSimpleResponse(notification.getUser()))
+                .isRead(notification.isRead())
                 .content(notification.getContent())
                 .notificationDate(notification.getNotificationDate())
                 .approval(approvalMapper.toApprovalSimpleResponse(notification.getApproval()))

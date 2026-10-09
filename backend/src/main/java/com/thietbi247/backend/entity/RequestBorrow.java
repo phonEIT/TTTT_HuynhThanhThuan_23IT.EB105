@@ -18,20 +18,28 @@ public class RequestBorrow {
     @GeneratedValue(strategy = GenerationType.UUID)
     String id;
     LocalDateTime  borrowDate;
-    String borrowReason;
+    LocalDateTime errorDate;
     LocalDateTime dueDate;
-
+    String borrowReason;
     @ManyToOne
     @JoinColumn(name = "user_id")
     User user;
 
-    @ManyToMany
-    @JoinTable(
-            name = "request_borrow_device",
-            joinColumns = @JoinColumn(name = "request_borrow_id"),
-            inverseJoinColumns = @JoinColumn(name = "device_id")
-    )
-    private Set<Device> devices ;
+    @ManyToOne
+    @JoinColumn(name = "device_id")
+    private Device device;
+
+    @OneToOne(mappedBy = "requestBorrow")
+    private Approval approval;
+
+    @OneToOne(mappedBy = "requestBorrow")
+    ReturnDevice returnDevice;
+
+    @OneToOne(mappedBy = "requestBorrow")
+    History history;
+
+    @OneToOne(mappedBy = "requestBorrow")
+    ErrorReport errorReport;
 
 
 }

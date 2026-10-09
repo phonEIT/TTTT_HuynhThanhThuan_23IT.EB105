@@ -15,5 +15,5 @@ import java.util.Set;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ReturnDeviceRequest {
-    List<String> deviceId;
+   String requestBorrow_id;
 }

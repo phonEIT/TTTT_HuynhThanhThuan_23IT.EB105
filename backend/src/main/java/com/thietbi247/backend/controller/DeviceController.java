@@ -46,11 +46,19 @@ public class DeviceController {
         return ApiResponseUtil.success(SuccessCode.DEVICE_DELETED);
     }
 
+    @GetMapping("{name}")
+    public ResponseEntity<List<DeviceResponse>> getDevice(@PathVariable String name) {
+        List<DeviceResponse> data = deviceService.getDeviceByName(name);
+        return ApiResponseUtil.success(data, SuccessCode.GET_DEVICE);
+    }
+
     @DeleteMapping
     public ResponseEntity<ApiResponse<Void>> deleteAllDevice() {
         deviceService.deleteAllDevice();
         return ApiResponseUtil.success(SuccessCode.DEVICE_DELETED);
     }
+
+
 
     @PutMapping
     public ResponseEntity<ApiResponse<Void>> updateDevice(@RequestBody DeviceUpdateRequest request) {

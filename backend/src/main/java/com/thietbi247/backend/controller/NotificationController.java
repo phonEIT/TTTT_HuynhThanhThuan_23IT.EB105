@@ -2,6 +2,7 @@ package com.thietbi247.backend.controller;
 
 import com.thietbi247.backend.constant.SuccessCode;
 import com.thietbi247.backend.dto.responsitory.ApiResponse;
+import com.thietbi247.backend.dto.responsitory.NotificationCountResponse;
 import com.thietbi247.backend.dto.responsitory.NotificationResponse;
 import com.thietbi247.backend.service.NotificationService;
 import com.thietbi247.backend.util.ApiResponseUtil;
@@ -13,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -43,6 +45,12 @@ public class NotificationController {
     @GetMapping("/myinfo")
     public ResponseEntity<List<NotificationResponse>> getNotificationByInfo() {
         List<NotificationResponse> data = service.myInfo();
+        return ApiResponseUtil.success(data, SuccessCode.GET_NOTIFICATION);
+    }
+
+    @GetMapping("/unread-count")
+    public ResponseEntity<NotificationCountResponse> getUnreadCount() {
+        NotificationCountResponse data = service.countUnreadNotifications();
         return ApiResponseUtil.success(data, SuccessCode.GET_NOTIFICATION);
     }
 }

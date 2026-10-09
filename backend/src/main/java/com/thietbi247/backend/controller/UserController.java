@@ -68,4 +68,10 @@ public class UserController {
         return ApiResponseUtil.success(data, SuccessCode.GET_EMPLOYEE);
     }
 
+    @GetMapping("/technician")
+    public ResponseEntity<List<UserResponse>> getTechnician(){
+        List<UserResponse> data = userService.getAllTechnician();
+        return  ApiResponseUtil.success(data, SuccessCode.EMPLOYEES_LISTED);
+    }
+
 }

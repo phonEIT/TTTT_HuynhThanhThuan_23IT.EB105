@@ -38,4 +38,41 @@ public class HistoryController {
         return ApiResponseUtil.success(data, SuccessCode.GET_HISTORY);
     }
 
+    @GetMapping("/my-return-device")
+    public ResponseEntity<List<HistoryResponse>> myReturnHistory() {
+        List<HistoryResponse> data = service.myReturnHistory();
+        return ApiResponseUtil.success(data, SuccessCode.RETURN_HISTORY_LISTED);
+    }
+
+    @GetMapping("/my-request-borrow")
+    public ResponseEntity<List<HistoryResponse>> myRequestHistory() {
+        List<HistoryResponse> data = service.myRequestBorrowHistory();
+        return ApiResponseUtil.success(data, SuccessCode.REQUEST_HISTORY_LISTED);
+    }
+
+    @GetMapping("/my-error-report")
+    public ResponseEntity<List<HistoryResponse>> myErrorHistory() {
+        List<HistoryResponse> data = service.myErrorReportHistory();
+        return ApiResponseUtil.success(data, SuccessCode.ERROR_HISTORY_LISTED);
+    }
+
+    @GetMapping("/request")
+    public ResponseEntity<List<HistoryResponse>> getRequestHistory() {
+        List<HistoryResponse> data = service.getAllRequestBorrowHistory();
+        return ApiResponseUtil.success(data, SuccessCode.REQUEST_HISTORY_LISTED_ADMIN);
+    }
+
+    @GetMapping("/return")
+    public ResponseEntity<List<HistoryResponse>> getReturnHistory() {
+        List<HistoryResponse> data = service.getAllReturnHistory();
+        return ApiResponseUtil.success(data, SuccessCode.RETURN_HISTORY_LISTED_ADMIN);
+    }
+
+    @GetMapping("/error")
+    public ResponseEntity<List<HistoryResponse>> getErrorHistory() {
+        List<HistoryResponse> data = service.getAllErrorHistory();
+        return ApiResponseUtil.success(data, SuccessCode.RETURN_HISTORY_LISTED_ADMIN);
+    }
+
+
 }
