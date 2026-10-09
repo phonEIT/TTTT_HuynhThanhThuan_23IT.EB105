@@ -1,0 +1,61 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap&subset=vietnamese');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Import font tiếng Việt từ Google Fonts (đặt ở đầu, ngoài mọi layer) */
+
+/* Thiết lập font Inter làm font chính */
+@layer base {
+  body {
+    font-family: 'Inter', sans-serif;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: 'Inter', sans-serif;
+  }
+
+  /* Default typography */
+  h1 {
+    @apply text-3xl font-bold md:text-5xl font-primary;
+  }
+  h2 {
+    @apply text-2xl font-bold md:text-4xl font-primary;
+  }
+  h3 {
+    @apply text-xl font-bold md:text-3xl font-primary;
+  }
+  h4 {
+    @apply text-lg font-bold font-primary;
+  }
+  body {
+    @apply text-sm font-primary md:text-base;
+  }
+
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --border: 0 0% 89.8%;
+  }
+
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Định nghĩa custom class font-primary */
+@layer utilities {
+  .font-primary {
+    font-family: 'Inter', sans-serif;
+  }
+}
